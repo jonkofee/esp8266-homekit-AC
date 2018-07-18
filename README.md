@@ -1,82 +1,96 @@
-# esp-homekit-demo
-Demo of [Apple HomeKit accessory server
-library](https://github.com/maximkulkin/esp-homekit).
+# ESP8266 HomeKit Server for ac remote control
 
 ## Usage
 
-1. Initialize and sync all submodules (recursively):
-```shell
-git submodule update --init --recursive
-```
-2. Copy wifi.h.sample -> wifi.h and edit it with correct WiFi SSID and password.
-3. Install [esp-open-sdk](https://github.com/pfalcon/esp-open-sdk), build it with `make toolchain esptool libhal STANDALONE=n`, then edit your PATH and add the generated toolchain bin directory. The path will be something like /path/to/esp-open-sdk/xtensa-lx106-elf/bin. (Despite the similar name esp-open-sdk has different maintainers - but we think it's fantastic!)
-
-4. Install [esptool.py](https://github.com/themadinventor/esptool) and make it available on your PATH. If you used esp-open-sdk then this is done already.
-5. Checkout [esp-open-rtos](https://github.com/SuperHouse/esp-open-rtos) and set SDK_PATH environment variable pointing to it.
-6. Configure settings:
-    1. If you use ESP8266 with 4MB of flash (32m bit), then you're fine. If you have
-1MB chip, you need to set following environment variables:
+1. Clone this repo
+2. Initialize and sync all submodules (recursively):
+  ```shell
+  git submodule update --init --recursive
+  ```
+3. Copy wifi.h.sample -> wifi.h and edit it with your WiFi SSID and password (used by esp).
+4. Install [esp-open-sdk](https://github.com/pfalcon/esp-open-sdk) :
+    - Install esp-open-sdk requirement tools
+    versions advisable :
+        - Homebrew 1.5.2
+        - Python 2.7.10
+        - Pip 9.0.1
     ```shell
-    export FLASH_SIZE=8
-    export HOMEKIT_SPI_FLASH_BASE_ADDR=0x7a000
+    $ brew tap homebrew/dupes
+    $ brew install binutils coreutils automake wget gawk libtool help2man gperf gnu-sed --with-default-names grep python
+    $ export PATH="/usr/local/opt/gnu-sed/libexec/gnubin:$PATH"
+    $ pip install esptool
     ```
-    2. If you're debugging stuff, or have troubles and want to file issue and attach log, please enable DEBUG output:
+    
+    - In addition to the development tools MacOS needs a case-sensitive filesystem.
+    You might need to create a virtual disk and build esp-open-sdk on it:
+    ```bash
+    sudo hdiutil create ~/Documents/case-sensitive.dmg -volname "case-sensitive" -size 10g -fs "Case-sensitive HFS+"
+    sudo hdiutil mount ~/Documents/case-sensitive.dmg
+    cd /Volumes/case-sensitive
+    ```
+    
+    - Be sure to clone recursively in volumes mounted previously:
     ```shell
-    export HOMEKIT_DEBUG=1
+    git clone --recursive https://github.com/pfalcon/esp-open-sdk.git
     ```
-7. Build example:
-```shell
-make -C examples/led all
-```
-8. Set ESPPORT environment variable pointing to USB device your ESP8266 is attached
-   to (assuming your device is at /dev/tty.SLAB_USBtoUART):
-```shell
-export ESPPORT=/dev/tty.SLAB_USBtoUART
-```
-9. To prevent any effects from previous firmware (e.g. firmware crashing right at
-   start), highly recommend to erase flash:
-```shell
-    make -C examples/led erase_flash
-```
-10. Upload firmware to ESP:
-```shell
-    make -C examples/led test
-```
-  or
-```shell
-    make -C examples/led flash
-    make -C examples/led monitor
-```
+    
+    - build it with
+    ```shell
+    make toolchain esptool libhal STANDALONE=n
+    ```
+    
+    - Then edit your PATH and add the generated toolchain bin directory (add it on your .bach_profile):
+    ```shell
+    export PATH="/Volumes/case-sensitive/esp-open-sdk/xtensa-lx106-elf/bin:$PATH"
+    ```
+    
+5. Install [esp-open-rtos](https://github.com/SuperHouse/esp-open-rtos):
 
-## ESP32
+    - Clone recursively:    
+    ```shell
+    git clone --recursive https://github.com/Superhouse/esp-open-rtos.git
+    ```
+    
+    - And set SDK_PATH environment variable pointing to it (add it on your .bach_profile):  
+    ```shell
+    export SDK_PATH="/TO/FOLDER/esp-open-rtos/"
+    ```
+6. Test build:
+    ```shell
+    make -C examples/led all
+    ```
+    If you have any problems with esptool.py file, you must review installation and version of python, pip, esptool and serial.
+    If the problems persist, install serial (python librarie)
+    ```shell
+    pip install serial
+    ```
+7. You’ll need to install a driver for the USB -> UART adapter:
+    - Download and install this [driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers)
+    - Connect the ESP and you should be able to see the /dev/tty.SLAB_USBtoUART/ device on your machine
+    ```shell 
+    ls -l /dev/tty.SLAB_USBtoUART/
+    ```
+    result `crw-rw-rw- 1 root wheel 18, 4 Jul 13 19:46 /dev/tty.SLAB_USBtoUART`
+    - You can also verify the kernel module is loaded via the kextstat command:
+    ```shell 
+    kextstat | grep -i silabs
+    ```
+    result `358 0 0xffffff7f83374000 0x6000 0x6000 com.silabs.driver.CP210xVCPDriver (4.10.11)`
 
+    - Set ESPPORT environment variable pointing to USB device your ESP8266 is attachedto (assuming your device is at /dev/tty.SLAB_USBtoUART):
+    ```shell
+    export ESPPORT=/dev/tty.SLAB_USBtoUART
+    ```
+8. Upload firmware to ESP:
+    ```shell
+        make -C examples/led test
+    ```
+      or
+    ```shell
+        make -C examples/led flash
+        make -C examples/led monitor
+    ```
+9. Pair your Iphone with ESP
+  
 
-1. Initialize and sync all submodules (recursively):
-```shell
-git submodule update --init --recursive
-```
-2. Copy wifi.h.sample -> wifi.h and edit it with correct WiFi SSID and password.
-3. Install [esp-idf](https://github.com/espressif/esp-idf) by following [instructions on esp-idf project page](https://github.com/espressif/esp-idf#setting-up-esp-idf). At the end you should have xtensa-esp32-elf toolchain in your path and IDF_PATH environment variable pointing to esp-idf directory.
-
-4. Configure project:
-```
-make -C examples/esp32/led menuconfig
-```
-There are many settings there, but at least you should configure "Serial flasher config -> Default serial port".
-Also, check "Components -> HomeKit" menu section.
-
-5. Build example:
-```shell
-make -C examples/esp32/led all
-```
-6. To prevent any effects from previous firmware (e.g. firmware crashing right at
-   start), highly recommend to erase flash:
-```shell
-    make -C examples/led erase_flash
-```
-7. Upload firmware to ESP32:
-```shell
-    make -C examples/led flash
-    make -C examples/led monitor
-```
-
+  
