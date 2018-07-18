@@ -14,7 +14,11 @@ homekit_characteristic_t current_temperature = HOMEKIT_CHARACTERISTIC_(
     CURRENT_TEMPERATURE, 19
 );
 homekit_characteristic_t target_temperature  = HOMEKIT_CHARACTERISTIC_(
-    TARGET_TEMPERATURE, 22, .min_step = (float[]) {1}, .min_value = (float[]) {16}, .max_value = (float[]) {31}
+    TARGET_TEMPERATURE,
+    22,
+    .min_step = (float[]) {1},
+    .min_value = (float[]) {16},
+    .max_value = (float[]) {31}
 );
 homekit_characteristic_t units = HOMEKIT_CHARACTERISTIC_(TEMPERATURE_DISPLAY_UNITS, 0);
 homekit_characteristic_t current_state = HOMEKIT_CHARACTERISTIC_(CURRENT_HEATING_COOLING_STATE, 0);
