@@ -16,3 +16,6 @@
 [submodule "components/WS2812FX"]
 	path = components/WS2812FX
 	url = https://github.com/pcsaito/WS2812FX-rtos
+[submodule "components/IRRemote"]
+	path = components/IRRemote
+	url = https://github.com/slawekkolodziej/irremote.git
