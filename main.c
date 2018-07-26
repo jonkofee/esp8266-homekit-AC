@@ -39,7 +39,7 @@ void sendIRbyte(uint8_t sendByte, int bitMarkLength, int zeroSpaceLength, int on
   }
 }
 
-void setACTemp(int temperature) {
+void setTemperature(int temperature) {
     printf("Send header");
     // Header
     ir_mark(2980);
@@ -114,7 +114,7 @@ void setACTemp(int temperature) {
 
 }
 
-void offAC() {
+void off() {
     printf("OFF");
   static const uint8_t samsungOffCode[] = { 0x01, 0x72, 0x0F, 0x00, 0x70, 0x41, 0x01, 0x01, 0xD2, 0xFE, 0x21, 0xD3, 0x15, 0xC0 };
 
@@ -159,9 +159,9 @@ void update_ac_state() {
     printf("Current mode: %d\n", mode);
 
     if (mode == 0) {
-        offAC();
+        off();
     } else {
-        setACTemp((int) target_temperature_value);
+        setTemperature((int) target_temperature_value);
     }
 }
 
