@@ -10,10 +10,9 @@
 #include <homekit/characteristics.h>
 #include "wifi.h"
 
-homekit_characteristic_t target_temperature;
-void update_ac_state();
-void offAC();
-void setACTemp(int temperature);
+void update_state();
+void off();
+void setTemperature(int temperature);
 
 const int ir_gpio = 4;
 
@@ -139,30 +138,8 @@ void off() {
   ir_space(0);
 }
 
-void on_set(homekit_value_t val) {
-    target_temperature_value = val.float_value;
-
-    update_ac_state();
-}
-
-homekit_value_t on_get() {
-    return HOMEKIT_FLOAT(target_temperature_value);
-}
-
-void on_set_mode(homekit_value_t val) {
-    mode = val.int_value;
-    
-    update_ac_state();
-}
-
-void update_ac_state() {
-    printf("Current mode: %d\n", mode);
-
-    if (mode == 0) {
-        off();
-    } else {
-        setTemperature((int) target_temperature_value);
-    }
+void on_update(homekit_characteristic_t *ch, homekit_value_t value, void *context) {
+    update_state();
 }
 
 homekit_characteristic_t current_temperature = HOMEKIT_CHARACTERISTIC_(
@@ -174,15 +151,14 @@ homekit_characteristic_t target_temperature  = HOMEKIT_CHARACTERISTIC_(
     .min_step = (float []) {1},
     .min_value = (float []) {18},
     .max_value = (float []) {30},
-    .setter = on_set,
-    .getter = on_get
+    .callback=HOMEKIT_CHARACTERISTIC_CALLBACK(on_update)
 );
 homekit_characteristic_t units = HOMEKIT_CHARACTERISTIC_(TEMPERATURE_DISPLAY_UNITS, 0);
 homekit_characteristic_t current_state = HOMEKIT_CHARACTERISTIC_(CURRENT_HEATING_COOLING_STATE, 0);
 homekit_characteristic_t target_state = HOMEKIT_CHARACTERISTIC_(
     TARGET_HEATING_COOLING_STATE,
     0,
-    .setter = on_set_mode
+    .callback=HOMEKIT_CHARACTERISTIC_CALLBACK(on_update)
 );
 homekit_characteristic_t cooling_threshold = HOMEKIT_CHARACTERISTIC_(
     COOLING_THRESHOLD_TEMPERATURE, 25
@@ -191,6 +167,35 @@ homekit_characteristic_t heating_threshold = HOMEKIT_CHARACTERISTIC_(
     HEATING_THRESHOLD_TEMPERATURE, 15
 );
 homekit_characteristic_t current_humidity = HOMEKIT_CHARACTERISTIC_(CURRENT_RELATIVE_HUMIDITY, 0);
+
+void update_state() {
+    uint8_t current_state_value = current_state.value.int_value;
+    uint8_t target_state_value = target_state.value.int_value;
+    uint8_t current_temperature_value = (int) current_temperature.value.float_value;
+    uint8_t target_temperature_value = (int) target_temperature.value.float_value;
+
+    printf("Current mode: %d\n", current_state_value);
+    printf("Target mode: %d\n", target_state_value);
+    printf("Current temperature: %d\n", current_temperature_value);
+    printf("Target temperature: %d\n", target_temperature_value);
+
+    if (target_state_value > 0) {
+        printf("Okey, i set %d temperature\n", target_temperature_value); 
+        setTemperature(target_temperature_value);
+    } else {
+        if (current_state_value == target_state_value) {
+            printf("AC ready OFF");
+
+            return;
+        }
+
+        printf("Okey, now off");
+        off();
+    }
+
+    current_state.value = HOMEKIT_UINT8(target_state_value);
+    homekit_characteristic_notify(&current_state, current_state.value);
+}
 
 static void wifi_init() {
     struct sdk_station_config wifi_config = {
