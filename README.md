@@ -92,5 +92,7 @@
     ```
 9. Pair your Iphone with ESP
   
+## Schema
 
+![Schema](https://github.com/jonkofee/esp-8266-ac-remote-control/blob/master/schema.png)
   
