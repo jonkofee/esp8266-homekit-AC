@@ -1,6 +1,6 @@
 /wifi.h
-/build
-/firmware
+/marks/*/*/build
+/marks/*/*/firmware
 .DS_Store
 
 
