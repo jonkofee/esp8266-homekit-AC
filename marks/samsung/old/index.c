@@ -1,13 +1,15 @@
 #include <./../main.c>
 
-#define CARRIER_AIRCON1_HDR_MARK   4320
-#define CARRIER_AIRCON1_HDR_SPACE  4350
-#define CARRIER_AIRCON1_BIT_MARK   500
-#define CARRIER_AIRCON1_ONE_SPACE  1650
-#define CARRIER_AIRCON1_ZERO_SPACE 550
-#define CARRIER_AIRCON1_MSG_SPACE  7400
-#define CARRIER_AIRCON1_MODE_AUTO  0x00
-#define CARRIER_AIRCON1_FAN_AUTO   0x00
+#define CARRIER_AIRCON2_HDR_MARK 4510
+#define CARRIER_AIRCON2_HDR_SPACE 4470
+#define CARRIER_AIRCON2_BIT_MARK 600
+#define CARRIER_AIRCON2_ONE_SPACE 1560
+#define CARRIER_AIRCON2_ZERO_SPACE 500
+#define CARRIER_AIRCON2_MODE_AUTO 0x10
+#define CARRIER_AIRCON2_FAN_AUTO     0x05
+#define CARRIER_AIRCON2_MODE_OFF     0x00 // Power OFF
+#define CARRIER_AIRCON2_MODE_ON      0x20 // Power ON
+#define CARRIER_AIRCON2_MODE_COOL    0x00
 
 homekit_characteristic_t target_temperature = HOMEKIT_CHARACTERISTIC_(
     TARGET_TEMPERATURE,
@@ -19,91 +21,46 @@ homekit_characteristic_t target_temperature = HOMEKIT_CHARACTERISTIC_(
 
 void setTemperature(int temperature)
 {
-  printf("Send header");
-  uint8_t sendBuffer[] = {0x4f, 0xb0, 0xc0, 0x3f, 0x80, 0x00, 0x00, 0x00, 0x00};
+  uint8_t sendBuffer[] = {0x4D, 0xB2, 0xD8, 0x00, 0x00, 0x00};
+  static const uint8_t sendBufferMaintenance1[] = {0xAD, 0x52, 0xAF, 0x50, 0xB5, 0x4A};
+  static const uint8_t sendBufferMaintenance2[] = {0xAD, 0x52, 0xAF, 0x50, 0x55, 0xAA};
+  static const uint8_t sendBufferTurbo[] = {0xAD, 0x52, 0xAF, 0x50, 0x45, 0xBA};
 
-  static const uint8_t temperatures[] = {0x00, 0x08, 0x04, 0x0c, 0x02, 0x0a, 0x06, 0x0e, 0x01, 0x09, 0x05, 0x0d, 0x03, 0x0b};
-  uint8_t checksum = 0;
+  static const uint8_t temperatures[] = {0, 8, 12, 4, 6, 14, 10, 2, 3, 11, 9, 1, 5, 13, 7};
 
-  sendBuffer[5] = temperatures[(temperature - 17)];
+  sendBuffer[2] |= CARRIER_AIRCON2_MODE_ON | CARRIER_AIRCON2_FAN_AUTO;
 
-  sendBuffer[6] = CARRIER_AIRCON1_MODE_AUTO | CARRIER_AIRCON1_FAN_AUTO;
+  // PROGMEM arrays cannot be addressed directly, see http://forum.arduino.cc/index.php?topic=106603.0
+  sendBuffer[4] |= CARRIER_AIRCON2_MODE_COOL | temperatures[(temperature - 17)];
 
-  // Checksum
-
-  for (int i = 0; i < 8; i++)
-  {
-    checksum += IRbitReverse(sendBuffer[i]);
-  }
-
-  switch (sendBuffer[6] & 0xF0)
-  {
-  case 0x00:
-    checksum += 0x02;
-    switch (sendBuffer[6] & 0x0F)
-    {
-    case 0x02: // FAN1
-    case 0x03: // FAN5
-    case 0x06: // FAN2
-      checksum += 0x80;
-      break;
-    }
-    break;
-  case 0x40: // MODE_DRY - all settings should work
-    checksum += 0x02;
-    break;
-  case 0xC0: // MODE_HEAT - certain temperature / fan speed combinations do not work
-    switch (sendBuffer[6] & 0x0F)
-    {
-    case 0x05: // FAN4
-    case 0x06: // FAN2
-      checksum += 0xC0;
-      break;
-    }
-    break;
-  case 0x20: // MODE_FAN - all settings should work
-    checksum += 0x02;
-    switch (sendBuffer[6] & 0x0F)
-    {
-    case 0x02: // FAN1
-    case 0x03: // FAN5
-    case 0x06: // FAN2
-      checksum += 0x80;
-      break;
-    }
-    break;
-  }
-
-printf("Send header2");
-  sendBuffer[8] = IRbitReverse(checksum);
+  // Checksums
+  sendBuffer[3] = ~sendBuffer[2];
+  sendBuffer[5] = ~sendBuffer[4];
 
   // Header
-  ir_mark(CARRIER_AIRCON1_HDR_MARK);
-  ir_space(CARRIER_AIRCON1_HDR_SPACE);
+  ir_mark(CARRIER_AIRCON2_HDR_MARK);
+  ir_space(CARRIER_AIRCON2_HDR_SPACE);
 
-printf("Send Payload");
   // Payload
   for (size_t i = 0; i < sizeof(sendBuffer); i++)
   {
-    sendIRbyte(sendBuffer[i], CARRIER_AIRCON1_BIT_MARK, CARRIER_AIRCON1_ZERO_SPACE, CARRIER_AIRCON1_ONE_SPACE);
+    sendIRbyte(sendBuffer[i], CARRIER_AIRCON2_BIT_MARK, CARRIER_AIRCON2_ZERO_SPACE, CARRIER_AIRCON2_ONE_SPACE);
   }
 
-  // Pause + new header
-  ir_mark(CARRIER_AIRCON1_BIT_MARK);
-  ir_space(CARRIER_AIRCON1_MSG_SPACE);
-
-  ir_mark(CARRIER_AIRCON1_HDR_MARK);
-  ir_space(CARRIER_AIRCON1_HDR_SPACE);
+  // New header
+  ir_mark(CARRIER_AIRCON2_BIT_MARK);
+  ir_space(CARRIER_AIRCON2_HDR_SPACE);
+  ir_mark(CARRIER_AIRCON2_HDR_MARK);
+  ir_space(CARRIER_AIRCON2_HDR_SPACE);
 
   // Payload again
   for (size_t i = 0; i < sizeof(sendBuffer); i++)
   {
-    sendIRbyte(sendBuffer[i], CARRIER_AIRCON1_BIT_MARK, CARRIER_AIRCON1_ZERO_SPACE, CARRIER_AIRCON1_ONE_SPACE);
+    sendIRbyte(sendBuffer[i], CARRIER_AIRCON2_BIT_MARK, CARRIER_AIRCON2_ZERO_SPACE, CARRIER_AIRCON2_ONE_SPACE);
   }
 
-printf("Send end");
   // End mark
-  ir_mark(CARRIER_AIRCON1_BIT_MARK);
+  ir_mark(CARRIER_AIRCON2_BIT_MARK);
   ir_space(0);
 }
 
