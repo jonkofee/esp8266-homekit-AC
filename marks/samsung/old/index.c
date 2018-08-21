@@ -22,15 +22,11 @@ homekit_characteristic_t target_temperature = HOMEKIT_CHARACTERISTIC_(
 void setTemperature(int temperature)
 {
   uint8_t sendBuffer[] = {0x4D, 0xB2, 0xD8, 0x00, 0x00, 0x00};
-  static const uint8_t sendBufferMaintenance1[] = {0xAD, 0x52, 0xAF, 0x50, 0xB5, 0x4A};
-  static const uint8_t sendBufferMaintenance2[] = {0xAD, 0x52, 0xAF, 0x50, 0x55, 0xAA};
-  static const uint8_t sendBufferTurbo[] = {0xAD, 0x52, 0xAF, 0x50, 0x45, 0xBA};
 
   static const uint8_t temperatures[] = {0, 8, 12, 4, 6, 14, 10, 2, 3, 11, 9, 1, 5, 13, 7};
 
   sendBuffer[2] |= CARRIER_AIRCON2_MODE_ON | CARRIER_AIRCON2_FAN_AUTO;
 
-  // PROGMEM arrays cannot be addressed directly, see http://forum.arduino.cc/index.php?topic=106603.0
   sendBuffer[4] |= CARRIER_AIRCON2_MODE_COOL | temperatures[(temperature - 17)];
 
   // Checksums
