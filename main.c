@@ -39,6 +39,17 @@ void sendIRbyte(uint8_t sendByte, int bitMarkLength, int zeroSpaceLength, int on
   }
 }
 
+uint8_t IRbitReverse(uint8_t x)
+{
+  //          01010101  |         10101010
+  x = ((x >> 1) & 0x55) | ((x << 1) & 0xaa);
+  //          00110011  |         11001100
+  x = ((x >> 2) & 0x33) | ((x << 2) & 0xcc);
+  //          00001111  |         11110000
+  x = ((x >> 4) & 0x0f) | ((x << 4) & 0xf0);
+  return x;
+}
+
 void on_update(homekit_characteristic_t *ch, homekit_value_t value, void *context) {
     update_state();
 }
