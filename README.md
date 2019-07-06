@@ -94,5 +94,5 @@
   
 ## Schema
 
-![Schema](https://github.com/jonkofee/esp-8266-ac-remote-control/blob/master/schema.png)
+![Schema](https://github.com/jonkofee/esp-8266-ac-remote-control/blob/master/Screenshot 2019-05-27 at 14.10.51.png)
   
