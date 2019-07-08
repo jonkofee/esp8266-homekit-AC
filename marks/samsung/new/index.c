@@ -69,10 +69,10 @@ void setTemperature(int temperature)
     break;
   }
 
-  ir_mark(440);
-  ir_space(1548);
-  ir_mark(2980);
-  ir_space(9240);
+//  ir_mark(440);
+//  ir_space(1548);
+//  ir_mark(2980);
+//  ir_space(9240);
 
   printf("Send template");
   for (size_t i = 0; i < sizeof(samsungTemplate); i++)

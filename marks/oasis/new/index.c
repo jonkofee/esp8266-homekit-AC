@@ -29,10 +29,10 @@ void setTemperature(int temperature)
 
 void off()
 {
-    handle(false);
+    handle(false, 22);
 }
 
-void handle(bool isOn, int temperature = 22)
+void handle(bool isOn, int temperature)
 {
     uint8_t header[] = { 0x23, 0xCB, 0x26, 0x02, 0x00, 0x40, 0x00,
                          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x65
